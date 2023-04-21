@@ -1,0 +1,40 @@
+trigger:
+- main
+
+stages:
+- stage: Build
+  displayName: 'Build stage'
+  jobs:
+  - job: Build
+    displayName: 'Build'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - script: echo 'Building the application...'
+    - task: Docker@2
+      inputs:
+        containerRegistry: 'your-container-registry-service-connection'
+        repository: 'your-dockerhub-username/myapp'
+        command: 'buildAndPush'
+        Dockerfile: '**/Dockerfile'
+        buildContext: '.'
+        tags: 'latest'
+
+- stage: Deploy
+  displayName: 'Deploy stage'
+  jobs:
+  - deployment: Deploy
+    displayName: 'Deploy'
+    pool:
+      vmImage: 'ubuntu-latest'
+    environment: 'your-environment-name'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: KubernetesManifest@0
+            inputs:
+              action: 'deploy'
+              kubernetesServiceConnection: 'your-kubernetes-service-connection'
+              namespace: 'your-namespace'
+              manifests: 'k8s-deployment.yaml, k8s-service.yaml'
